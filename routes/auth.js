@@ -35,7 +35,7 @@ router.post("/register", async (req, res) => {
 
     // Generate unique userID and profileURL
     const userID = uuidv4();
-    const profileURL = `https://localhost.in/profile/${username}`;
+    const profileURL = `https://localhost/profile/${username}`;
 
     // Create a new user
     const newUser = new User({
