@@ -20,41 +20,83 @@ const handleError = (res, statusCode, message, error = null) => {
 
 // =========================== REGISTER ===========================
 
+
 router.post("/register", async (req, res) => {
   try {
-    const { name, username, email, password, phone } = req.body;
+    let { name, username, email, password, phone } = req.body;
 
-    // Check if username or email already exists
+    // Trim and normalize input
+    name = name?.trim();
+    username = username?.trim().toLowerCase();
+    email = email?.trim().toLowerCase();
+    phone = phone?.trim();
+
+    // Input validation
+    if (!name || !username || !email || !password || !phone) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    if (username.length < 3 || username.length > 20) {
+      return res.status(400).json({ message: "Username must be 3–20 characters." });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format." });
+    }
+
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({ message: "Phone number must be 10 digits." });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters long." });
+    }
+
+    // Check if user exists
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
-      return res.status(400).json({ message: "Username or Email already in use" });
+      const conflictField = existingUser.email === email ? "Email" : "Username";
+      return res.status(409).json({ message: `${conflictField} already in use.` });
     }
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate unique userID and profileURL
+    // Generate userID and profileURL
     const userID = uuidv4();
-    const profileURL = `https://localhost/profile/${username}`;
+    const profileURL = `https://igniteverse.in/profile/${username}`;
 
-    // Create a new user
+    // Save user
     const newUser = new User({
       name,
       username,
       email,
       password: hashedPassword,
       phone,
-      userID, //Line 44
+      userID,
       profileURL,
     });
 
     await newUser.save();
-    res.status(201).json({ message: "User registered successfully", profileURL });
+
+    res.status(201).json({
+      message: "User registered successfully.",
+      profileURL,
+      username,
+    });
+
   } catch (error) {
-    // console.error("Registration error:", error);
-    res.status(500).json({ message: "Server error. Please try again later." , error: error.message});
+    console.error("❌ Registration error:", error.message);
+    res.status(500).json({
+      message: "Server error. Please try again later.",
+      error: error.message,
+    });
   }
 });
+
+
 
 
 // =========================== LOGIN ===========================
