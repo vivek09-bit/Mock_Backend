@@ -99,6 +99,14 @@ const SubPlanSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
+// Add fields for preferences, stats, and avatar (required for new user APIs)
+UserSchema.add({
+  avatar: { type: String }, // URL or path to uploaded avatar
+  preferences: { type: Map, of: String }, // e.g., { theme: 'dark', language: 'en' }
+  stats: { type: Map, of: Number } // e.g., { testsTaken: 5, averageScore: 80 }
+});
+
+
 module.exports = {
   User: mongoose.model('User', UserSchema),
   QuestionSet: mongoose.model('QuestionSet', QuestionSetSchema),
