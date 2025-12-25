@@ -18,12 +18,7 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopol
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use("/api/test", require("./routes/testRoutes"));
-<<<<<<< HEAD
-app.use('/api/users', require('./routes/userRoutes'));
-
-=======
 app.use('/api/user', require('./routes/user'));
->>>>>>> 850d02a (completed the login and register)
 // app.use(`/api/mocktest/${testId}`, testRoutes);
 // app.get('/api/mocktest/:testId', getTest);
 // app.get('/api/mocktest/:testId/questions', getQuestions);
