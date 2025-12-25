@@ -7,6 +7,8 @@ const verifyToken = require("../middleware/verifyToken");
 const { v4: uuidv4 } = require("uuid");
 const { startTest, submitTest } = require("../controllers/testController");
 const authMiddleware = require("../middleware/authMiddleware");
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 
 const router = express.Router();
@@ -220,3 +222,92 @@ router.get("/me", authMiddleware, async (req, res) => {
 
 
 module.exports = router;
+
+// =========================== FORGOT / RESET PASSWORD ===========================
+// Helper to send reset email if SMTP is configured; otherwise log the link
+const sendResetEmail = async (toEmail, resetLink) => {
+  try {
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+
+      const info = await transporter.sendMail({
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: toEmail,
+        subject: 'Password reset request',
+        text: `Use the following link to reset your password: ${resetLink}`,
+        html: `<p>Use the following link to reset your password:</p><p><a href="${resetLink}">${resetLink}</a></p>`,
+      });
+
+      console.log('Reset email sent:', info.messageId);
+      return info;
+    } else {
+      // Fallback: log the reset link so developer can use it in environments without SMTP
+      console.log('No SMTP config found. Reset link (log only):', resetLink);
+      return null;
+    }
+  } catch (err) {
+    console.error('Error sending reset email:', err);
+    throw err;
+  }
+};
+
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required.' });
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      // Do not reveal whether the email exists
+      return res.status(200).json({ message: 'If the email exists, a reset link has been sent.' });
+    }
+
+    // Generate token
+    const token = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    const frontend = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetLink = `${frontend}/reset-password/${token}`;
+
+    await sendResetEmail(user.email, resetLink);
+
+    res.status(200).json({ message: 'If the email exists, a reset link has been sent.' });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ message: 'Server error. Please try again later.' });
+  }
+});
+
+// POST /api/auth/reset-password/:token
+router.post('/reset-password/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ message: 'Password is required.' });
+
+    const user = await User.findOne({ resetPasswordToken: token, resetPasswordExpires: { $gt: Date.now() } });
+    if (!user) return res.status(400).json({ message: 'Invalid or expired token.' });
+
+    const hashed = await bcrypt.hash(password, 10);
+    user.password = hashed;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.status(200).json({ message: 'Password has been reset successfully.' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ message: 'Server error. Please try again later.' });
+  }
+});

@@ -11,6 +11,8 @@ const UserSchema = new mongoose.Schema({
   subscription_status: { type: String, default: "inactive" },
   userID: { type: String, unique: true }, // Unique user ID
   profileURL: { type: String, unique: true },  
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
 }, { timestamps: true });
 
 // Question Set Schema

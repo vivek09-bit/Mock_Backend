@@ -2,7 +2,9 @@
 node_modules/
 
 # Backend - Environment variables file (sensitive information)
-# backend/.env
+.env
+# (If you previously used a path like backend/.env, keep it ignored as well.)
+backend/.env
 
 # Backend - Logs
 backend/*.log
