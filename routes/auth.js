@@ -83,6 +83,11 @@ router.post("/register", async (req, res) => {
 
     await newUser.save();
 
+    // Send welcome email (best-effort; do not block registration on email failures)
+    sendWelcomeEmail(newUser.email, newUser.username, newUser.name).catch(err => {
+      console.error('Welcome email error:', err);
+    });
+
     res.status(201).json({
       message: "User registered successfully.",
       profileURL,
@@ -255,6 +260,53 @@ const sendResetEmail = async (toEmail, resetLink) => {
     }
   } catch (err) {
     console.error('Error sending reset email:', err);
+    throw err;
+  }
+};
+
+// Helper to send welcome email after registration
+const sendWelcomeEmail = async (toEmail, username, name) => {
+  try {
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+
+      const from = process.env.EMAIL_FROM || process.env.SMTP_USER;
+      const subject = 'Welcome to Ignite';
+      const html = `
+        <p>Hi ${name || username},</p>
+        <p>Welcome to Ignite! Your account has been created successfully.</p>
+        <ul>
+          <li><strong>Username:</strong> ${username}</li>
+          <li><strong>Registered email:</strong> ${toEmail}</li>
+        </ul>
+        <p>We're glad to have you — explore the platform and let us know if you need any help.</p>
+        <p>— The Ignite Team</p>
+      `;
+
+      const info = await transporter.sendMail({
+        from,
+        to: toEmail,
+        subject,
+        html,
+      });
+
+      console.log('Welcome email sent:', info.messageId);
+      return info;
+    } else {
+      // If SMTP not configured, log the welcome notice
+      console.log(`Welcome email (log): To=${toEmail}, Username=${username}`);
+      return null;
+    }
+  } catch (err) {
+    console.error('Error sending welcome email:', err);
     throw err;
   }
 };
