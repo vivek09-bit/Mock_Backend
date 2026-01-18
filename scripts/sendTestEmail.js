@@ -13,7 +13,7 @@ async function sendTest() {
   } = process.env;
 
   if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
-    console.error('❌ Missing SMTP configuration in environment. Check your .env file.');
+    console.error('Missing SMTP configuration in environment. Check your .env file.');
     process.exit(1);
   }
 
@@ -44,7 +44,7 @@ async function sendTest() {
       html: '<strong>Success!</strong> This email verifies your .env configuration is working.',
     });
 
-    console.log('✅ Test email sent successfully!');
+    console.log('Test email sent successfully!');
     console.log('Message ID:', info.messageId);
   } catch (error) {
     throw error; // Let the .catch() block handle it
@@ -52,6 +52,6 @@ async function sendTest() {
 }
 
 sendTest().catch(err => {
-  console.error('❌ Error sending test email:', err.message);
+  console.error('Error sending test email:', err.message);
   process.exit(1);
 });
