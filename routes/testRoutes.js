@@ -99,7 +99,14 @@ router.post("/submit", async (req, res) => {
                       timestamp: new Date(),
                   },
               },
-              $set: { lastAttempted: new Date() },
+              $set: { 
+                lastAttempted: new Date(),
+                testDetails: {
+                  testName: test.name,
+                  totalQuestions: totalQuestions,
+                  passingScore: test.passingScore
+                }
+              },
               $max: { bestScore: score },
           },
           { upsert: true, new: true }

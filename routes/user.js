@@ -8,7 +8,7 @@ router.get('/tests/:userId', async (req, res) => {
     const { userId } = req.params;
     const records = await UserTestRecord.find({ userId }).lean();
     if (!records || records.length === 0) {
-      return res.status(404).json({ success: false, message: 'No tests found for user' });
+      return res.status(200).json({ success: true, records: [] });
     }
     res.json({ success: true, records });
   } catch (error) {
