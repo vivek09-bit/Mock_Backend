@@ -33,6 +33,22 @@ router.post("/register", async (req, res) => {
     email = email?.trim().toLowerCase();
     phone = phone?.trim();
 
+    // 1. Verify the Email Token first (Security Check)
+    const { verificationToken } = req.body;
+    if (!verificationToken) {
+      return res.status(403).json({ message: "Email verification required before registration." });
+    }
+
+    try {
+      const decoded = jwt.verify(verificationToken, process.env.JWT_SECRET);
+      if (decoded.email !== email || !decoded.verified) {
+        return res.status(403).json({ message: "Invalid verification token for this email." });
+      }
+      // Valid token! Proceed with registration.
+    } catch (err) {
+      return res.status(403).json({ message: "Invalid or expired verification token." });
+    }
+
     // Input validation
     if (!name || !username || !email || !password || !phone) {
       return res.status(400).json({ message: "All fields are required." });
@@ -42,6 +58,7 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "Username must be 3–20 characters." });
     }
 
+    // Email validation (redundant if verified, but good for format check)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: "Invalid email format." });

@@ -109,11 +109,19 @@ UserSchema.add({
 });
 
 
+// Pending Verification Schema (for OTPs)
+const PendingVerificationSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  otp: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now, expires: 600 } // Auto-delete after 10 minutes
+});
+
 module.exports = {
   User: mongoose.model('User', UserSchema),
   QuestionSet: mongoose.model('QuestionSet', QuestionSetSchema),
   Test: mongoose.model('Test', TestSchema),
   UserTestRecord: mongoose.model('UserTestRecord', UserTestRecordSchema),
   Subscription: mongoose.model('Subscription', SubscriptionSchema),
-  SubPlan: mongoose.model('SubPlan', SubPlanSchema)
+  SubPlan: mongoose.model('SubPlan', SubPlanSchema),
+  PendingVerification: mongoose.model('PendingVerification', PendingVerificationSchema)
 };
