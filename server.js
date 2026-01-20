@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(cors({
   origin: function (origin, callback) {
     const allowedOrigins = [
-      'https://igniteverse.in/',
+      'https://igniteverse.in',
       'http://localhost:3000',
       'http://localhost:5173'
     ];
