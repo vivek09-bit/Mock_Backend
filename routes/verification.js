@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { User, PendingVerification } = require("../models/Structure");
+const { verificationEmailTemplate } = require("../utils/emailTemplates");
 
 // Helper to send email
 const sendVerificationEmail = async (email, otp) => {
@@ -26,11 +27,7 @@ const sendVerificationEmail = async (email, otp) => {
     from: process.env.EMAIL_FROM || process.env.SMTP_USER,
     to: email,
     subject: "Verify your email - Ignite",
-    html: `
-      <h2>Email Verification</h2>
-      <p>Your verification code is: <strong>${otp}</strong></p>
-      <p>This code expires in 10 minutes.</p>
-    `,
+    html: verificationEmailTemplate(otp),
   });
 };
 

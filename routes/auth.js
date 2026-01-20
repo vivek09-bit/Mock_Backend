@@ -9,6 +9,7 @@ const { startTest, submitTest } = require("../controllers/testController");
 const authMiddleware = require("../middleware/authMiddleware");
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const { welcomeEmailTemplate, resetPasswordTemplate, passwordChangeSuccessTemplate } = require('../utils/emailTemplates');
 
 
 const router = express.Router();
@@ -263,9 +264,8 @@ const sendResetEmail = async (toEmail, resetLink) => {
       const info = await transporter.sendMail({
         from: process.env.EMAIL_FROM || process.env.SMTP_USER,
         to: toEmail,
-        subject: 'Password reset request',
-        text: `Use the following link to reset your password: ${resetLink}`,
-        html: `<p>Use the following link to reset your password:</p><p><a href="${resetLink}">${resetLink}</a></p>`,
+        subject: 'Password reset request - Ignite',
+        html: resetPasswordTemplate(resetLink),
       });
 
       console.log('Reset email sent:', info.messageId);
@@ -296,17 +296,8 @@ const sendWelcomeEmail = async (toEmail, username, name) => {
       });
 
       const from = process.env.EMAIL_FROM || process.env.SMTP_USER;
-      const subject = 'Welcome to Ignite';
-      const html = `
-        <p>Hi ${name || username},</p>
-        <p>Welcome to Ignite! Your account has been created successfully.</p>
-        <ul>
-          <li><strong>Username:</strong> ${username}</li>
-          <li><strong>Registered email:</strong> ${toEmail}</li>
-        </ul>
-        <p>We're glad to have you — explore the platform and let us know if you need any help.</p>
-        <p>— The Ignite Team</p>
-      `;
+      const subject = 'Welcome to Ignite! 🚀';
+      const html = welcomeEmailTemplate(name, username);
 
       const info = await transporter.sendMail({
         from,
@@ -373,6 +364,23 @@ router.post('/reset-password/:token', async (req, res) => {
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
+
+    // Send confirmation email
+    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || "smtp.gmail.com",
+        port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
+        secure: process.env.SMTP_SECURE === "true",
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      });
+
+      await transporter.sendMail({
+        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+        to: user.email,
+        subject: "Password Changed Successfully - Ignite",
+        html: passwordChangeSuccessTemplate(user.name || user.username),
+      });
+    }
 
     res.status(200).json({ message: 'Password has been reset successfully.' });
   } catch (err) {
