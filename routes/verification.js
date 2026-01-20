@@ -13,22 +13,37 @@ const sendVerificationEmail = async (email, otp) => {
     return;
   }
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
-    port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
-    secure: process.env.SMTP_SECURE === "true",
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+  const host = process.env.SMTP_HOST || "smtp-relay.brevo.com";
+  const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
+  // Auto-detect secure if not explicitly set: true for 465, false otherwise.
+  const secure = process.env.SMTP_SECURE !== undefined
+    ? process.env.SMTP_SECURE === "true"
+    : port === 465;
 
-  await transporter.sendMail({
-    from: process.env.EMAIL_FROM || process.env.SMTP_USER,
-    to: email,
-    subject: "Verify your email - Ignite",
-    html: verificationEmailTemplate(otp),
-  });
+  try {
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+      connectionTimeout: 10000, // 10 seconds timeout
+    });
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+      to: email,
+      subject: "Verify your email - Ignite",
+      html: verificationEmailTemplate(otp),
+    });
+    console.log(`[Email] Verification sent to ${email} (Host: ${host}, Port: ${port}, Secure: ${secure})`);
+  } catch (error) {
+    console.error(`[Email Error] Failed to send to ${email} via ${host}:${port} (Secure: ${secure})`);
+    console.error(error);
+    throw error; // Re-throw to be caught by the route handler
+  }
 };
 
 // 1. Initiate Verification (Send OTP)
@@ -70,7 +85,7 @@ router.post("/verify", async (req, res) => {
     if (!email || !otp) return res.status(400).json({ message: "Email and OTP required" });
 
     const record = await PendingVerification.findOne({ email: email.toLowerCase() });
-    
+
     if (!record) {
       return res.status(400).json({ message: "Verification code expired or invalid" });
     }

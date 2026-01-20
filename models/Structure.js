@@ -10,7 +10,7 @@ const UserSchema = new mongoose.Schema({
   role: { type: String, enum: ["Student", "Teacher"], default: "Student" },
   subscription_status: { type: String, default: "inactive" },
   userID: { type: String, unique: true }, // Unique user ID
-  profileURL: { type: String, unique: true },  
+  profileURL: { type: String, unique: true },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
 }, { timestamps: true });
@@ -20,13 +20,14 @@ const QuestionSetSchema = new mongoose.Schema({
   name: { type: String, required: true },
   subject: { type: String, required: true },
   subcategory: { type: String, required: true },
+  topic: { type: String, required: true },
+  difficulty: { type: String, enum: ['easy', 'medium', 'hard'], required: true },
   questions: [
     {
       questionText: { type: String, required: true },
       options: { type: [String], required: true },
       correctAnswer: { type: Number, required: true },
       answerExplanation: { type: String },
-      difficulty: { type: String, enum: ['easy', 'medium', 'hard'], required: true },
       tags: [String]
     }
   ],

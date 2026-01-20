@@ -129,8 +129,8 @@ router.post("/login", async (req, res) => {
   try {
     const { emailOrUsername, password } = req.body;
 
-    const user = await User.findOne({ 
-      $or: [{ email: emailOrUsername }, { username: emailOrUsername }] 
+    const user = await User.findOne({
+      $or: [{ email: emailOrUsername }, { username: emailOrUsername }]
     });
 
     if (!user) {
@@ -219,7 +219,7 @@ router.get("/mocktest/:testId", async (req, res) => {
 // Get all questions for a specific test
 router.get("/quiz/questions", async (req, res) => {
   try {
-    const questions = await Test.find(); 
+    const questions = await Test.find();
     if (!questions) {
       return res.status(404).json({ success: false, message: "No questions found" });
     }
@@ -251,14 +251,21 @@ module.exports = router;
 const sendResetEmail = async (toEmail, resetLink) => {
   try {
     if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const host = process.env.SMTP_HOST || "smtp-relay.brevo.com";
+      const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
+      const secure = process.env.SMTP_SECURE !== undefined
+        ? process.env.SMTP_SECURE === "true"
+        : port === 465;
+
       const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
-        secure: process.env.SMTP_SECURE === 'true',
+        host,
+        port,
+        secure,
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS,
         },
+        connectionTimeout: 10000,
       });
 
       const info = await transporter.sendMail({
@@ -268,7 +275,7 @@ const sendResetEmail = async (toEmail, resetLink) => {
         html: resetPasswordTemplate(resetLink),
       });
 
-      console.log('Reset email sent:', info.messageId);
+      console.log(`Reset email sent to ${toEmail} (Host: ${host}:${port})`);
       return info;
     } else {
       // Fallback: log the reset link so developer can use it in environments without SMTP
@@ -285,14 +292,21 @@ const sendResetEmail = async (toEmail, resetLink) => {
 const sendWelcomeEmail = async (toEmail, username, name) => {
   try {
     if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const host = process.env.SMTP_HOST || "smtp-relay.brevo.com";
+      const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
+      const secure = process.env.SMTP_SECURE !== undefined
+        ? process.env.SMTP_SECURE === "true"
+        : port === 465;
+
       const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
-        secure: process.env.SMTP_SECURE === 'true',
+        host,
+        port,
+        secure,
         auth: {
           user: process.env.SMTP_USER,
           pass: process.env.SMTP_PASS,
         },
+        connectionTimeout: 10000,
       });
 
       const from = process.env.EMAIL_FROM || process.env.SMTP_USER;
@@ -306,7 +320,7 @@ const sendWelcomeEmail = async (toEmail, username, name) => {
         html,
       });
 
-      console.log('Welcome email sent:', info.messageId);
+      console.log(`Welcome email sent to ${toEmail} (Host: ${host}:${port})`);
       return info;
     } else {
       // If SMTP not configured, log the welcome notice
@@ -367,11 +381,18 @@ router.post('/reset-password/:token', async (req, res) => {
 
     // Send confirmation email
     if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const host = process.env.SMTP_HOST || "smtp-relay.brevo.com";
+      const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
+      const secure = process.env.SMTP_SECURE !== undefined
+        ? process.env.SMTP_SECURE === "true"
+        : port === 465;
+
       const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || "smtp.gmail.com",
-        port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
-        secure: process.env.SMTP_SECURE === "true",
+        host,
+        port,
+        secure,
         auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        connectionTimeout: 10000,
       });
 
       await transporter.sendMail({
