@@ -1,13 +1,12 @@
 const express = require("express");
 const router = express.Router();
-// const nodemailer = require("nodemailer"); // Removed
+
 const { sendEmail } = require("../utils/emailService");
-const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { User, PendingVerification } = require("../models/Structure");
 const { verificationEmailTemplate } = require("../utils/emailTemplates");
 
-// Helper to send email
+// Helper to send verification email
 const sendVerificationEmail = async (email, otp) => {
   await sendEmail(
     email,
@@ -20,10 +19,14 @@ const sendVerificationEmail = async (email, otp) => {
 router.post("/initiate", async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ message: "Email is required" });
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const normalizedEmail = email.toLowerCase();
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(409).json({ message: "Email is already registered" });
     }
@@ -31,20 +34,27 @@ router.post("/initiate", async (req, res) => {
     // Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Save to DB (upsert)
+    // Save or update OTP
     await PendingVerification.findOneAndUpdate(
-      { email: email.toLowerCase() },
-      { email: email.toLowerCase(), otp: otp, createdAt: new Date() },
+      { email: normalizedEmail },
+      {
+        email: normalizedEmail,
+        otp,
+        createdAt: new Date(),
+      },
       { upsert: true, new: true }
     );
 
-    // Send Email
-    await sendVerificationEmail(email, otp);
+    // Send OTP email via Brevo
+    await sendVerificationEmail(normalizedEmail, otp);
 
-    res.json({ success: true, message: "Verification code sent to email" });
+    res.json({
+      success: true,
+      message: "Verification code sent to email",
+    });
   } catch (error) {
     console.error("Verification Initiate Error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Failed to send verification email" });
   }
 });
 
@@ -52,32 +62,45 @@ router.post("/initiate", async (req, res) => {
 router.post("/verify", async (req, res) => {
   try {
     const { email, otp } = req.body;
-    if (!email || !otp) return res.status(400).json({ message: "Email and OTP required" });
+    if (!email || !otp) {
+      return res.status(400).json({ message: "Email and OTP required" });
+    }
 
-    const record = await PendingVerification.findOne({ email: email.toLowerCase() });
+    const normalizedEmail = email.toLowerCase();
+
+    const record = await PendingVerification.findOne({
+      email: normalizedEmail,
+    });
 
     if (!record) {
-      return res.status(400).json({ message: "Verification code expired or invalid" });
+      return res.status(400).json({
+        message: "Verification code expired or invalid",
+      });
     }
 
     if (record.otp !== otp) {
-      return res.status(400).json({ message: "Invalid verification code" });
+      return res.status(400).json({
+        message: "Invalid verification code",
+      });
     }
 
-    // OTP Matches! Issue a specific "verification token" for registration
-    // This token proves that this specific email was verified
+    // Issue verification token
     const verificationToken = jwt.sign(
-      { email: email.toLowerCase(), verified: true },
+      {
+        email: normalizedEmail,
+        verified: true,
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
-    // Optional: Delete the pending record immediately (or let it expire)
-    // await PendingVerification.deleteOne({ _id: record._id }); 
-    // Keeping it might prevent spamming "initiate" again immediately, but for now let's keep logic simple.
+    // Optional cleanup (recommended after registration)
+    // await PendingVerification.deleteOne({ email: normalizedEmail });
 
-    res.json({ success: true, verificationToken });
-
+    res.json({
+      success: true,
+      verificationToken,
+    });
   } catch (error) {
     console.error("Verification Verify Error:", error);
     res.status(500).json({ message: "Server error" });
