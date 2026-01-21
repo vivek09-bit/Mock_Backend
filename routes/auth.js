@@ -87,7 +87,7 @@ router.post("/register", async (req, res) => {
 
     // Generate userID and profileURL
     const userID = uuidv4();
-    const profileURL = `https://igniteverse.in/profile/${username}`;
+    const profileURL = `${process.env.FRONTEND_URL}/profile/${username}`;
 
     // Save user
     const newUser = new User({
@@ -252,7 +252,7 @@ module.exports = router;
 const sendResetEmail = async (toEmail, resetLink) => {
   await sendEmail(
     toEmail,
-    'Password reset request - Ignite',
+    'Password reset request - Ignite Verse',
     resetPasswordTemplate(resetLink)
   );
 };
@@ -261,7 +261,7 @@ const sendResetEmail = async (toEmail, resetLink) => {
 const sendWelcomeEmail = async (toEmail, username, name) => {
   await sendEmail(
     toEmail,
-    'Welcome to Ignite! 🚀',
+    'Welcome to Ignite Verse! 🚀',
     welcomeEmailTemplate(name, username)
   );
 };
@@ -284,7 +284,7 @@ router.post('/forgot-password', async (req, res) => {
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    const frontend = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const frontend = process.env.FRONTEND_URL;
     const resetLink = `${frontend}/reset-password/${token}`;
 
     await sendResetEmail(user.email, resetLink);
@@ -315,7 +315,7 @@ router.post('/reset-password/:token', async (req, res) => {
     // Send confirmation email
     await sendEmail(
       user.email,
-      "Password Changed Successfully - Ignite",
+      "Password Changed Successfully - Ignite Verse",
       passwordChangeSuccessTemplate(user.name || user.username)
     );
 
