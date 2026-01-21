@@ -248,7 +248,6 @@ router.get("/me", authMiddleware, async (req, res) => {
 module.exports = router;
 
 // =========================== FORGOT / RESET PASSWORD ===========================
-// Helper to send reset email if SMTP is configured; otherwise log the link
 // Helper to send reset email
 const sendResetEmail = async (toEmail, resetLink) => {
   await sendEmail(

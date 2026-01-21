@@ -8,7 +8,6 @@ const { User, PendingVerification } = require("../models/Structure");
 const { verificationEmailTemplate } = require("../utils/emailTemplates");
 
 // Helper to send email
-// Helper to send email
 const sendVerificationEmail = async (email, otp) => {
   await sendEmail(
     email,
