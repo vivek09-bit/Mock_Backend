@@ -26,6 +26,16 @@ const sendEmail = async (to, subject, htmlContent) => {
         return null;
     }
 
+    // Critical Check: Prevent using SMTP key for API
+    if (apiKey.startsWith('xsmtp')) {
+        console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+        console.error('[Email Service] CONFIG ERROR: You are using an SMTP key (starts with "xsmtpsib-").');
+        console.error('[Email Service] You MUST use an API Key (starts with "xkeysib-").');
+        console.error('[Email Service] Get it here: https://app.brevo.com/settings/keys/api');
+        console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+        return null;
+    }
+
     const senderInfo = parseSender(process.env.EMAIL_FROM || process.env.SMTP_USER);
 
     const postData = JSON.stringify({
