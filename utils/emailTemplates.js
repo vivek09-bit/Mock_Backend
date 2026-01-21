@@ -48,7 +48,7 @@ const welcomeEmailTemplate = (name, username) => getEmailLayout(`
   </p>
   <p>Explore our mock tests and start your journey to success today.</p>
   <br>
-  <a href="http://localhost:5173/login" class="button">Go to Dashboard</a>
+  <a href="https://igniteverse.in/login" class="button">Go to Dashboard</a>
 `);
 
 const resetPasswordTemplate = (link) => getEmailLayout(`
@@ -70,7 +70,7 @@ const passwordChangeSuccessTemplate = (name) => getEmailLayout(`
   <p>Your password has been successfully updated.</p>
   <p>If you did not make this change, please contact our support team immediately.</p>
   <br>
-  <a href="http://localhost:5173/login" class="button">Login Now</a>
+  <a href="https://igniteverse.in/login" class="button">Login Now</a>
 `);
 
 module.exports = {
