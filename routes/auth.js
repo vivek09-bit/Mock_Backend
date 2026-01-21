@@ -8,7 +8,8 @@ const { v4: uuidv4 } = require("uuid");
 const { startTest, submitTest } = require("../controllers/testController");
 const authMiddleware = require("../middleware/authMiddleware");
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+// const nodemailer = require('nodemailer'); // Removed
+const { sendEmail } = require("../utils/emailService");
 const { welcomeEmailTemplate, resetPasswordTemplate, passwordChangeSuccessTemplate } = require('../utils/emailTemplates');
 
 
@@ -247,41 +248,14 @@ router.get("/me", authMiddleware, async (req, res) => {
 module.exports = router;
 
 // =========================== FORGOT / RESET PASSWORD ===========================
-// Helper to send reset email if SMTP is configured; otherwise log the link
+// Helper to send reset email
 const sendResetEmail = async (toEmail, resetLink) => {
   try {
-    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-      const host = process.env.SMTP_HOST || "smtp-relay.brevo.com";
-      const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
-      const secure = process.env.SMTP_SECURE !== undefined
-        ? process.env.SMTP_SECURE === "true"
-        : port === 465;
-
-      const transporter = nodemailer.createTransport({
-        host,
-        port,
-        secure,
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
-        connectionTimeout: 10000,
-      });
-
-      const info = await transporter.sendMail({
-        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
-        to: toEmail,
-        subject: 'Password reset request - Ignite',
-        html: resetPasswordTemplate(resetLink),
-      });
-
-      console.log(`Reset email sent to ${toEmail} (Host: ${host}:${port})`);
-      return info;
-    } else {
-      // Fallback: log the reset link so developer can use it in environments without SMTP
-      console.log('No SMTP config found. Reset link (log only):', resetLink);
-      return null;
-    }
+    await sendEmail(
+      toEmail,
+      'Password reset request - Ignite',
+      resetPasswordTemplate(resetLink)
+    );
   } catch (err) {
     console.error('Error sending reset email:', err);
     throw err;
@@ -291,45 +265,14 @@ const sendResetEmail = async (toEmail, resetLink) => {
 // Helper to send welcome email after registration
 const sendWelcomeEmail = async (toEmail, username, name) => {
   try {
-    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-      const host = process.env.SMTP_HOST || "smtp-relay.brevo.com";
-      const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
-      const secure = process.env.SMTP_SECURE !== undefined
-        ? process.env.SMTP_SECURE === "true"
-        : port === 465;
-
-      const transporter = nodemailer.createTransport({
-        host,
-        port,
-        secure,
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
-        connectionTimeout: 10000,
-      });
-
-      const from = process.env.EMAIL_FROM || process.env.SMTP_USER;
-      const subject = 'Welcome to Ignite! 🚀';
-      const html = welcomeEmailTemplate(name, username);
-
-      const info = await transporter.sendMail({
-        from,
-        to: toEmail,
-        subject,
-        html,
-      });
-
-      console.log(`Welcome email sent to ${toEmail} (Host: ${host}:${port})`);
-      return info;
-    } else {
-      // If SMTP not configured, log the welcome notice
-      console.log(`Welcome email (log): To=${toEmail}, Username=${username}`);
-      return null;
-    }
+    await sendEmail(
+      toEmail,
+      'Welcome to Ignite! 🚀',
+      welcomeEmailTemplate(name, username)
+    );
   } catch (err) {
     console.error('Error sending welcome email:', err);
-    throw err;
+    // Don't throw for welcome email
   }
 };
 
@@ -380,28 +323,11 @@ router.post('/reset-password/:token', async (req, res) => {
     await user.save();
 
     // Send confirmation email
-    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-      const host = process.env.SMTP_HOST || "smtp-relay.brevo.com";
-      const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
-      const secure = process.env.SMTP_SECURE !== undefined
-        ? process.env.SMTP_SECURE === "true"
-        : port === 465;
-
-      const transporter = nodemailer.createTransport({
-        host,
-        port,
-        secure,
-        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-        connectionTimeout: 10000,
-      });
-
-      await transporter.sendMail({
-        from: process.env.EMAIL_FROM || process.env.SMTP_USER,
-        to: user.email,
-        subject: "Password Changed Successfully - Ignite",
-        html: passwordChangeSuccessTemplate(user.name || user.username),
-      });
-    }
+    await sendEmail(
+      user.email,
+      "Password Changed Successfully - Ignite",
+      passwordChangeSuccessTemplate(user.name || user.username)
+    );
 
     res.status(200).json({ message: 'Password has been reset successfully.' });
   } catch (err) {
