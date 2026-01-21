@@ -42,7 +42,6 @@ router.post("/initiate", async (req, res) => {
         email: normalizedEmail,
         otp,
         createdAt: new Date(),
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       },
       { upsert: true, new: true }
     );
@@ -74,7 +73,7 @@ router.post("/verify", async (req, res) => {
       email: normalizedEmail,
     });
 
-    if (!record || record.expiresAt < new Date()) {
+    if (!record) {
       return res.status(400).json({
         message: "Verification code expired",
       });
