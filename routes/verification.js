@@ -1,49 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const nodemailer = require("nodemailer");
+// const nodemailer = require("nodemailer"); // Removed
+const { sendEmail } = require("../utils/emailService");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const { User, PendingVerification } = require("../models/Structure");
 const { verificationEmailTemplate } = require("../utils/emailTemplates");
 
 // Helper to send email
+// Helper to send email
 const sendVerificationEmail = async (email, otp) => {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.log(`[DEV] SMTP not set. OTP for ${email} is: ${otp}`);
-    return;
-  }
-
-  const host = process.env.SMTP_HOST || "smtp-relay.brevo.com";
-  const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587;
-  // Auto-detect secure if not explicitly set: true for 465, false otherwise.
-  const secure = process.env.SMTP_SECURE !== undefined
-    ? process.env.SMTP_SECURE === "true"
-    : port === 465;
-
-  try {
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-      connectionTimeout: 10000, // 10 seconds timeout
-    });
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.SMTP_USER,
-      to: email,
-      subject: "Verify your email - Ignite",
-      html: verificationEmailTemplate(otp),
-    });
-    console.log(`[Email] Verification sent to ${email} (Host: ${host}, Port: ${port}, Secure: ${secure})`);
-  } catch (error) {
-    console.error(`[Email Error] Failed to send to ${email} via ${host}:${port} (Secure: ${secure})`);
-    console.error(error);
-    throw error; // Re-throw to be caught by the route handler
-  }
+  await sendEmail(
+    email,
+    "Verify your email - Ignite",
+    verificationEmailTemplate(otp)
+  );
 };
 
 // 1. Initiate Verification (Send OTP)
