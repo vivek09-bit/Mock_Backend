@@ -8,6 +8,7 @@ const { verificationEmailTemplate } = require("../utils/emailTemplates");
 
 // Helper to send verification email
 const sendVerificationEmail = async (email, otp) => {
+  // This function sends a verification email to the user with the provided OTP
   await sendEmail(
     email,
     "Verify your email - Ignite",
@@ -41,6 +42,7 @@ router.post("/initiate", async (req, res) => {
         email: normalizedEmail,
         otp,
         createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
       },
       { upsert: true, new: true }
     );
@@ -72,11 +74,12 @@ router.post("/verify", async (req, res) => {
       email: normalizedEmail,
     });
 
-    if (!record) {
+    if (!record || record.expiresAt < new Date()) {
       return res.status(400).json({
-        message: "Verification code expired or invalid",
+        message: "Verification code expired",
       });
     }
+
 
     if (record.otp !== otp) {
       return res.status(400).json({
@@ -94,13 +97,14 @@ router.post("/verify", async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    // Optional cleanup (recommended after registration)
-    // await PendingVerification.deleteOne({ email: normalizedEmail });
+
+    await PendingVerification.deleteOne({ email: normalizedEmail });
 
     res.json({
       success: true,
       verificationToken,
     });
+
   } catch (error) {
     console.error("Verification Verify Error:", error);
     res.status(500).json({ message: "Server error" });

@@ -22,10 +22,10 @@ const sendEmail = async (to, subject, htmlContent) => {
 
         // Parse sender from env
         const senderRaw =
-            process.env.EMAIL_FROM || "Ignite <no-reply@teamignite.in>";
+            process.env.EMAIL_FROM || "noreply-Igniteverse<no-reply@igniteverse.in>";
 
-        let senderName = "Ignite";
-        let senderEmail = "no-reply@teamignite.in";
+        let senderName = "Igniteverse";
+        let senderEmail = "no-reply@igniteverse.in";
 
         const match = senderRaw.match(/(.*?)\s*<(.*?)>/);
         if (match) {
