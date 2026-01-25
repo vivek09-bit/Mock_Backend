@@ -69,15 +69,16 @@ router.post("/submit", async (req, res) => {
           const selectedQuestions = set.setId.questions.slice(0, set.numToPick);
 
           selectedQuestions.forEach((question) => {
-              const selectedOption = answers[question._id];
+              const selectedOption = answers[question._id]; // User sends the Option Value (String) now
 
               if (selectedOption !== undefined) {
-                  const isCorrect = selectedOption === question.correctAnswer;
+                  // Direct string comparison since both are strings now
+                  const isCorrect = selectedOption === question.correct_option;
                   if (isCorrect) correctAnswers++;
 
                   attemptedQuestions.push({
                       questionId: question._id,
-                      questionText: question.questionText,
+                      questionText: question.question.text, // Access nested text
                       selectedOption,
                       isCorrect,
                   });

@@ -46,12 +46,12 @@ exports.submitTest = async (req, res) => {
       set.setId.questions.forEach((question) => {
         const userAnswer = answers.find((a) => a.questionId === question._id.toString());
         if (userAnswer) {
-          const isCorrect = question.correctAnswer === userAnswer.selectedOption;
+          const isCorrect = question.correct_option === userAnswer.selectedOption;
           if (isCorrect) score += 1;
 
           questionsAttempted.push({
             questionId: question._id,
-            questionText: question.questionText,
+            questionText: question.question.text,
             selectedOption: userAnswer.selectedOption,
             isCorrect,
           });

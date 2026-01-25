@@ -24,10 +24,16 @@ const QuestionSetSchema = new mongoose.Schema({
   difficulty: { type: String, enum: ['easy', 'medium', 'hard'], required: true },
   questions: [
     {
-      questionText: { type: String, required: true },
+      topic: { type: String },
+      subtopic: { type: String },
+      question: {
+        text: { type: String, required: true }
+      },
       options: { type: [String], required: true },
-      correctAnswer: { type: Number, required: true },
-      answerExplanation: { type: String },
+      correct_option: { type: String, required: true },
+      explanation: {
+        text: { type: String }
+      },
       tags: [String]
     }
   ],
@@ -71,7 +77,7 @@ const UserTestRecordSchema = new mongoose.Schema({
         {
           questionId: { type: mongoose.Schema.Types.ObjectId, ref: 'QuestionSet.questions' },
           questionText: { type: String, required: true },
-          selectedOption: { type: Number, required: true },
+          selectedOption: { type: String, required: true }, // Changed from Number to String to match correct_option
           isCorrect: { type: Boolean, required: true }
         }
       ],
