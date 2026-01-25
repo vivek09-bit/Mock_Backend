@@ -52,6 +52,11 @@ const TestSchema = new mongoose.Schema({
   description: { type: String },
   isPublic: { type: Boolean, default: true },
   accessPasscode: { type: String, default: null },
+  // Hierarchy fields
+  category: { type: String, index: true },    // e.g., "Banking", "SSC"
+  examTarget: { type: String, index: true },  // e.g., "SBI PO", "IBPS Clerk"
+  stage: { type: String, enum: ['Prelims', 'Mains', 'Interview', 'Practice'] }, 
+  type: { type: String, enum: ['Full Mock', 'Sectional', 'Topic Wise', 'Previous Year'] },
   questionSets: [
     {
       setId: { type: mongoose.Schema.Types.ObjectId, ref: 'QuestionSet' },

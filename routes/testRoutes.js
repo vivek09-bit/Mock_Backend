@@ -4,13 +4,19 @@ const { Test, UserTestRecord } = require("../models/Structure");
 
 
 // Get all available tests
-// Get all available tests
+// Get all available tests (with filters)
 router.get("/", async (req, res) => {
     try {
+      const { category, examTarget, stage, type } = req.query;
 
-      // console.log("Test model:", Test);
-      const tests = await Test.find();
-      // console.log(tests);
+      // Build filter object based on query params
+      const filter = {};
+      if (category) filter.category = category;
+      if (examTarget) filter.examTarget = examTarget;
+      if (stage) filter.stage = stage;
+      if (type) filter.type = type;
+
+      const tests = await Test.find(filter);
       
       res.json(tests);
   

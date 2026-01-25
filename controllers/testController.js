@@ -72,8 +72,13 @@ exports.submitTest = async (req, res) => {
 
     res.status(200).json({
       message: "Test submitted successfully",
-      score,
+      testId: test._id,
+      testName: test.name,
+      score: Math.round((score / questionsAttempted.length) * 100), // Return percentage
       totalQuestions: questionsAttempted.length,
+      correctAnswers: score, // raw score = number of correct answers
+      passingScore: test.passingScore,
+      passed: (score / questionsAttempted.length) * 100 >= test.passingScore
     });
   } catch (error) {
     console.error("Error submitting test:", error);
