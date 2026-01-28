@@ -6,7 +6,10 @@ const { UserTestRecord } = require('../models/Structure');
 router.get('/tests/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const records = await UserTestRecord.find({ userId }).lean();
+    const records = await UserTestRecord.find({ userId })
+      .populate('testId', 'category examTarget stage type') // Populate missing metadata
+      .lean();
+      
     if (!records || records.length === 0) {
       return res.status(200).json({ success: true, records: [] });
     }
