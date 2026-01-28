@@ -1,11 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const { Test, UserTestRecord } = require("../models/Structure");
+const auth = require("../middleware/authMiddleware");
 
-
-// Get all available tests
 // Get all available tests (with filters)
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
     try {
       const { category, examTarget, stage, type } = req.query;
 
@@ -28,7 +27,7 @@ router.get("/", async (req, res) => {
   
 
 // Get test details by ID
-router.get("/:testId", async (req, res) => {
+router.get("/:testId", auth, async (req, res) => {
   try {
     const test = await Test.findById(req.params.testId).populate("questionSets.setId");
     if (!test) return res.status(404).json({ message: "Test not found" });
@@ -46,7 +45,7 @@ router.get("/:testId", async (req, res) => {
 });
 
 
-router.post("/submit", async (req, res) => {
+router.post("/submit", auth, async (req, res) => {
   try {
       const { testId, userId, answers } = req.body;
       // console.log(req.body);
